@@ -1,0 +1,56 @@
+# Specify the version of the Docker Compose file format
+version: '3.8'
+
+# Define the services that will run in your application
+services:
+
+  # Configuration for the MySQL database service
+  database:
+    # Use the MySQL 8 Docker image
+    image: mysql:8
+    environment:
+      # Set the root password for MySQL
+      MYSQL_ROOT_PASSWORD: password
+      # Specify the name of the database to be created
+      MYSQL_DATABASE: product
+      # Specify the MySQL user and its password
+      MYSQL_USER: product
+      MYSQL_PASSWORD: password
+    volumes:
+      # Mount a volume to persist MySQL data
+      - mysql_data:/var/lib/mysql
+
+  # Configuration for the server application
+  server:
+    # Build the server image using the Dockerfile in the ./server directory
+    build:
+      context: ./backend
+    # Expose port 8080 on the host and map it to port 8080 in the container
+    ports:
+      - "8080:8080"
+    environment:
+      # Set the Spring DataSource URL to connect to the MySQL database service
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/product
+      # Set the username for connecting to the MySQL database
+      SPRING_DATASOURCE_USERNAME: product
+      # Set the password for connecting to the MySQL database
+      SPRING_DATASOURCE_PASSWORD: password
+    # Depend on the database service, ensuring it starts before the server
+    depends_on:
+      - database
+      
+  # Configuration for the client application
+  client:
+    # Build the client image using the Dockerfile in the ./client directory
+    build:
+      context: ./frontend
+    # Expose port 3000 on the host and map it to port 5173 in the container
+    ports:
+      - "3000:3000"
+    # Depend on the server service, ensuring it starts before the client
+    depends_on:
+      - server
+
+# Define a volume named mysql_data for persisting MySQL data
+volumes:
+  mysql_data:
